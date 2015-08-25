@@ -33,7 +33,7 @@ def parse_snodes(snodes):
         cpu_load = float(line[4])
         cpu_tot = int(line[2])
         cpu_alloc = int(line[3].split("/")[0])
-        real_memory = float(line[0])
+        real_memory = int(line[0])
         threads_per_core = int(line[-1])
         alloc_memory = memory_dict[node_name]
 
@@ -54,7 +54,7 @@ def parse_snodes(snodes):
         if free_cpus > 0:
 
             # check if allocated memory in percent is larger than allocated cpus in percent.
-            if free_memory/real_memory < float(free_cpus) / cpu_tot and cpu_alloc > 0 and (free_memory * threads_per_core) / free_cpus < 2:
+            if cpu_alloc > 0 and float(free_memory)/real_memory < float(free_cpus) / cpu_tot and float(free_memory * threads_per_core) / free_cpus < 2:
                 if len(job_list) == 0:
                     job_list = get_job_info(node_name)
                 # get list of jobs where allocated memory in percent is larger than allocated cpus in percent.
@@ -63,7 +63,7 @@ def parse_snodes(snodes):
 
             if free_memory > 0:
                 # Only count cpu as available if 2gb ram is unallocated
-                free_cpus = min(free_cpus, int(free_memory/2))
+                free_cpus = min(free_cpus, free_memory/2)
                 if partition not in free_dict.keys(): free_dict[partition] = []
                 free_dict[partition].append([free_cpus, free_memory, threads_per_core])
 
@@ -74,22 +74,40 @@ def check_memory_usage(full_job_list,real_memory, cpu_tot):
     job_list = []
     for job in full_job_list:
         job_id, user, job_name, num_nodes, num_cpus, mem = job
-        if mem / num_cpus > real_memory / cpu_tot:
+        if float(mem) / num_cpus > float(real_memory) / cpu_tot:
             job_list.append(job)
     return job_list
 
 # print number of jobs possible to submit on all queues, for 1,2,4,8,12 cpus.
 def print_free_dict(free_dict):
-    print "\n\nPossible submissions:\n"
+    print_list = []
+    print_list.append("\n\nPossible submissions:\n")
     l = max([len(x) for x in free_dict.keys()])
-    for partition in free_dict.keys():
-        ones = sum([x[0]/x[2] for x in free_dict[partition]])
-        twos = sum([x[0]/(2*x[2]) for x in free_dict[partition]])
-        fours = sum([x[0]/(4*x[2]) for x in free_dict[partition]])
-        eights = sum([x[0]/(8*x[2]) for x in free_dict[partition]])
-        twelves = sum([x[0]/(12*x[2]) for x in free_dict[partition]])
 
-        print "{0:{1:0d}s}: {2:3d} jobs on {3:1d} thread, {4:3d} jobs on {5:1d} threads, {6:3d} jobs on {7:1d} threads, {8:3d} jobs on {9:1d} threads, {10:3d} jobs on {11:2d} threads".format(partition, l, ones, 1, twos, 2, fours, 4, eights, 8, twelves, 12)
+    # get window size
+    rows, columns = os.popen('stty size', 'r').read().split()
+    columns = int(columns)
+
+    size_dict = {}
+    for partition in free_dict.keys():
+        remaining_columns = columns
+        ones = sum([x[0]/x[2] for x in free_dict[partition]])
+        size_dict[2] = sum([x[0]/(2*x[2]) for x in free_dict[partition]])
+        size_dict[4] = sum([x[0]/(4*x[2]) for x in free_dict[partition]])
+        size_dict[8] = sum([x[0]/(8*x[2]) for x in free_dict[partition]])
+        size_dict[12] = sum([x[0]/(12*x[2]) for x in free_dict[partition]])
+        size_dict[16] = sum([x[0]/(16*x[2]) for x in free_dict[partition]])
+        size_dict[24] = sum([x[0]/(16*x[2]) for x in free_dict[partition]])
+
+        print_list.append("{0:{1:0d}s}: {2:3d} jobs on {3:1d} thread".format(partition, l, ones, 1))
+        remaining_columns -= 22+l
+        for size in sorted(size_dict.keys()):
+            if remaining_columns > 22:
+                print_list.append(", {0:3d} jobs on {1:1d} threads".format(size_dict[size], size))
+                remaining_columns -= 23
+        print_list.append("\n")
+    print "".join(print_list)
+
 
 # print which jobs that blocks cpu's from being used.
 def print_memory_list(memory_list):
@@ -97,12 +115,12 @@ def print_memory_list(memory_list):
     for node in memory_list:
         real_cpus = node[0] / node[1]
         if node[4] > 2:
-            while real_cpus > 0 and node[4] / real_cpus < 2:
+            while real_cpus > 0 and float(node[4]) / real_cpus < 2:
                 real_cpus -= 1
         print "{0:5s} {1:10s}   {2:2d} CPUs blocked by: ".format(node[3], node[2], real_cpus)
 
         for job in node[-1]:
-            print "      User: {0:10s}   job-id: {1:7s}   Allocated memory: {2:6.0f}   Allocated CPUs: {3:2d}".format(job[1], job[0], job[5], job[4]/node[1])
+            print "      User: {0:10s}   job-id: {1:7s}   Allocated memory: {2:6d}   Allocated CPUs: {3:2d}".format(job[1], job[0], job[5], job[4]/node[1])
 
 # prints the node where cpu load is more than 30% off compared to the number of allocated cpus
 # prints info on all jobs running on that node.
@@ -129,7 +147,7 @@ def get_job_info(node_name):
         job_name = job_output[0][1].split("=")[1]
         num_nodes = int(job_output[14][0].split("=")[1])
         num_cpus = int(job_output[14][1].split("=")[1])
-        mem = float(job_output[16][2].split("=")[1])
+        mem = int(job_output[16][2].split("=")[1])
 
         job_list.append((job_id, user, job_name, num_nodes, num_cpus, mem))
     return job_list
@@ -161,7 +179,7 @@ def get_memory_info(node_list):
     counter = 0
     for line in output:
         if len(line) == 5 and "AllocMem" in line[2]:
-            memory_dict[node_list[counter]] = float(line[2].split("=")[1])
+            memory_dict[node_list[counter]] = int(line[2].split("=")[1])
             counter +=1
     return memory_dict
 
