@@ -97,7 +97,7 @@ def print_free_dict(free_dict):
         size_dict[8] = sum([x[0]/(8*x[2]) for x in free_dict[partition]])
         size_dict[12] = sum([x[0]/(12*x[2]) for x in free_dict[partition]])
         size_dict[16] = sum([x[0]/(16*x[2]) for x in free_dict[partition]])
-        size_dict[24] = sum([x[0]/(16*x[2]) for x in free_dict[partition]])
+        size_dict[24] = sum([x[0]/(24*x[2]) for x in free_dict[partition]])
 
         print_list.append("{0:{1:0d}s}: {2:3d} jobs on {3:1d} thread".format(partition, l, ones, 1))
         remaining_columns -= 22+l
