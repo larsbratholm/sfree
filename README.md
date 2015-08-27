@@ -3,7 +3,7 @@ This script, for the slurm queue-system, tries to detect jobs that results in re
 
 For all partitions the user has access to, cpu load on all nodes are compared with the number of allocated cpus. Jobs that results in cpus not being able to be used on a node is displayed as well.
 
-Lastly the amount of jobs able to run on 1, 2, 4, 8 and 12 cpus are displayed for each partition.
+Lastly the amount of jobs able to run on 1, 2, 4, 8, 12, 16 and 24 cpus are displayed for each partition. This output is reduced to e.g. 1, 2 and 4 depending on the width of the terminal running the script.
 
 If the user has access to partitions on multiple accounts, just a single account can be analyzed by running "./sfree \<account\_name\>"
 
@@ -19,7 +19,7 @@ kemi4 node031       6 CPUs blocked by:
       User: user2        job-id: 1592114   Allocated memory:  32768   Allocated CPUs:  2
 
 Possible submissions:
-kemi3:  24 jobs on 1 thread,  12 jobs on 2 threads,   6 jobs on 4 threads,   2 jobs on 8 threads
-kemi1:  12 jobs on 1 thread,   6 jobs on 2 threads,   3 jobs on 4 threads,   1 jobs on 8 threads
-kemi4:  10 jobs on 1 thread,   5 jobs on 2 threads,   2 jobs on 4 threads,   1 jobs on 8 threads
+kemi3:  24 jobs on 1 thread,  12 jobs on 2 threads,   6 jobs on 4 threads
+kemi1:  12 jobs on 1 thread,   6 jobs on 2 threads,   3 jobs on 4 threads
+kemi4:  10 jobs on 1 thread,   5 jobs on 2 threads,   2 jobs on 4 threads
 ```
