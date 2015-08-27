@@ -9,8 +9,8 @@ If the user has access to partitions on multiple accounts, just a single account
 
 Example output:
 
-Possible bad CPU utilization:
-kemi4 node037    Allocated CPUs: 8     CPU load:  1.0
+Possible bad CPU utilization:\n
+kemi4 node037    Allocated CPUs: 8     CPU load:  1.0\n
       User: user1        job-id: 1611400   job-name: pcNmp2OH_nmr
 Misuse of memory:
 kemi4 node031       6 CPUs blocked by: 
