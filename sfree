@@ -22,12 +22,17 @@ def get_queues(lines):
     return queues
 
 def parse_snodes(snodes):
+    # catches an error where a node with down state is in the list:
+    for i, node in enumerate(snodes[::-1]):
+        if node[-1] == "0":
+            snodes.pop(-i-1)
+
     cpu_list = []
     memory_list = []
     free_dict = {}
-    node_list = [x[1] for x in snodes[:-1]]
+    node_list = [x[1] for x in snodes]
     memory_dict = get_memory_info(node_list)
-    for line in snodes[:-1]:
+    for line in snodes:
         partition = line[5]
         node_name = line[1]
         cpu_load = float(line[4])
@@ -202,10 +207,10 @@ if len(queues) > 0:
     arg_string += " -p "
     for item in queues[:-1]:
         arg_string += item + ","
-    arg_string += queues[-1] + " | grep -v drng"
+    arg_string += queues[-1]
 
 # print possible bad cpu utilization and memory misuse.
-snodes = run(arg_string)
+snodes = run(arg_string)[:-1]
 
 # get number of free cpus
 free_dict, cpu_list, memory_list = parse_snodes(snodes)
