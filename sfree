@@ -190,7 +190,7 @@ def get_memory_info(node_list):
 
 
 # Get the partitions the user have access to.
-command = "sacctmgr show associations format=Partition%15 -n user=$USER"
+command = "sacctmgr show associations format=Partition%-30 -n user=$USER"
 
 # Only get partitions from the user given account
 account = None
