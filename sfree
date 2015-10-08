@@ -78,12 +78,12 @@ def parse_snodes(snodes):
 def check_memory_usage(full_job_list,real_memory, cpu_tot):
     job_list = []
     for job in full_job_list:
-        job_id, user, job_name, num_nodes, num_cpus, mem = job
+        job_id, user, job_name, num_nodes, num_cpus, mem, time = job
         if float(mem) / num_cpus > float(real_memory) / cpu_tot:
             job_list.append(job)
     return job_list
 
-# print number of jobs possible to submit on all queues, for 1,2,4,8,12 cpus.
+# print number of jobs possible to submit on all queues, for 1,2,4,8 etc. cpus.
 def print_free_dict(free_dict):
     print_list = []
     print_list.append("\n\nPossible submissions:\n")
@@ -116,28 +116,45 @@ def print_free_dict(free_dict):
 
 # print which jobs that blocks cpu's from being used.
 def print_memory_list(memory_list):
-    print "\nMisuse of memory:"
+    print_lines = ["\nMisuse of memory:"]
     for node in memory_list:
         real_cpus = node[0] / node[1]
         if node[4] > 2000:
             while real_cpus > 0 and float(node[4]) / real_cpus < 2000:
                 real_cpus -= 1
-        print "{0:5s} {1:10s}   {2:2d} CPUs blocked by: ".format(node[3], node[2], real_cpus)
+        print_lines.append("{0:5s} {1:10s}   {2:2d} CPUs blocked by: ".format(node[3], node[2], real_cpus))
 
         for job in node[-1]:
-            print "      User: {0:10s}   job-id: {1:7s}   Allocated memory: {2:6d}   Allocated CPUs: {3:2d}".format(job[1], job[0], job[5], job[4]/node[1])
+            print_lines.append("      User: {0:10s}   job-id: {1:7s}   Allocated memory: {2:6d}   Allocated CPUs: {3:2d}".format(job[1], job[0], job[5], job[4]/node[1]))
+    if len(print_lines) > 1:
+        for line in print_lines:
+            print line
 
 # prints the node where cpu load is more than 30% off compared to the number of allocated cpus
 # prints info on all jobs running on that node.
 def print_cpu_list(cpu_list):
     if len(cpu_list) == 0:
         return
-    print "\nPossible bad CPU utilization:"
+    print_lines = ["\nPossible bad CPU utilization:"]
     for node in cpu_list:
-        real_cpus = node[1]/node[4]
-        print "{0:5s} {1:10s} {2:12s} {3:<5d} {4:9s} {5:4.1f}".format(node[3], node[0], "Allocated CPUs:", real_cpus, "CPU load:", node[2])
+        # flag to register if there's jobs that has been running for less than 5 minutes.
+        # Flag to register if any jobs has been running for less than 5 minutes on the node, since cpu load takes a while to update.
+        flag = False
         for job in node[5]:
-            print "      User: {0:10s}   job-id: {1:6s}   job-name: {2:30s}".format(job[1], job[0], job[2])
+            time_split = job[6].split(":")
+            if not ("-" in time_split[0] or len(time_split) > 2 or int(time_split[-2]) >= 5):
+                flag = True
+                print job
+                continue
+        if flag:
+            continue
+        real_cpus = node[1]/node[4]
+        print_lines.append("{0:5s} {1:10s} {2:12s} {3:<5d} {4:9s} {5:4.1f}".format(node[3], node[0], "Allocated CPUs:", real_cpus, "CPU load:", node[2]))
+        for job in node[5]:
+            print_lines.append("      User: {0:10s}   job-id: {1:6s}   job-name: {2:30s}".format(job[1], job[0], job[2]))
+    if len(print_lines) > 1:
+        for line in print_lines:
+            print line
 
 
 def get_job_info(node_name):
@@ -146,6 +163,7 @@ def get_job_info(node_name):
     for job in output[:-1]:
         job_id = job[0]
         user = job[3]
+        time = job[5]
 
         job_output = run("scontrol show jobid -d " + job_id)
 
@@ -154,7 +172,7 @@ def get_job_info(node_name):
         num_cpus = int(job_output[14][1].split("=")[1])
         mem = int(job_output[16][2].split("=")[1])
 
-        job_list.append((job_id, user, job_name, num_nodes, num_cpus, mem))
+        job_list.append((job_id, user, job_name, num_nodes, num_cpus, mem, time))
     return job_list
 
 # checks if cpu load is within 30% of number of allocated cpus on node.
