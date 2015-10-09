@@ -137,14 +137,13 @@ def print_cpu_list(cpu_list):
         return
     print_lines = ["\nPossible bad CPU utilization:"]
     for node in cpu_list:
-        # flag to register if there's jobs that has been running for less than 5 minutes.
-        # Flag to register if any jobs has been running for less than 5 minutes on the node, since cpu load takes a while to update.
+        # flag to register if there's jobs that has been running for less than 10 minutes.
+        # Flag to register if any jobs has been running for less than 10 minutes on the node, since cpu load takes a while to update.
         flag = False
         for job in node[5]:
             time_split = job[6].split(":")
-            if not ("-" in time_split[0] or len(time_split) > 2 or int(time_split[-2]) >= 5):
+            if not ("-" in time_split[0] or len(time_split) > 2 or int(time_split[-2]) >= 10):
                 flag = True
-                print job
                 continue
         if flag:
             continue
